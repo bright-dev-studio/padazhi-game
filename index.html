@@ -1,0 +1,717 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Падежные Супергерои — Мега Игра по Русскому Языку</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Canvas Confetti CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Fonts: Fredoka & Comfortaa -->
+    <link href="https://fonts.googleapis.com/css2?family=Comfortaa:wght@700&family=Fredoka:wght@500;600;700&family=Nunito:wght@700;900&display=swap" rel="stylesheet">
+
+    <style>
+        * {
+            user-select: none;
+            -webkit-tap-highlight-color: transparent;
+        }
+        body {
+            font-family: 'Nunito', sans-serif;
+            background: radial-gradient(circle at 50% 20%, #2e0854 0%, #0f051d 100%);
+            min-height: 100vh;
+            color: #fff;
+            overflow-x: hidden;
+        }
+        .font-header {
+            font-family: 'Fredoka', 'Comfortaa', cursive;
+        }
+
+        /* 3D Tactile Buttons */
+        .btn-3d {
+            transition: all 0.1s ease;
+            box-shadow: 0 8px 0 var(--btn-shadow);
+        }
+        .btn-3d:active {
+            transform: translateY(6px);
+            box-shadow: 0 2px 0 var(--btn-shadow);
+        }
+
+        /* Bright Glowing Elements */
+        .glow-purple {
+            box-shadow: 0 0 25px rgba(168, 85, 247, 0.5);
+        }
+        .glow-yellow {
+            box-shadow: 0 0 25px rgba(234, 179, 8, 0.6);
+        }
+        .glow-cyan {
+            box-shadow: 0 0 25px rgba(6, 182, 212, 0.6);
+        }
+
+        /* Floating animations */
+        @keyframes float {
+            0%, 100% { transform: translateY(0px) rotate(0deg); }
+            50% { transform: translateY(-12px) rotate(2deg); }
+        }
+        .animate-float {
+            animation: float 3.5s ease-in-out infinite;
+        }
+
+        @keyframes popUp {
+            0% { transform: scale(0.5); opacity: 0; }
+            70% { transform: scale(1.1); opacity: 1; }
+            100% { transform: scale(1); opacity: 1; }
+        }
+        .animate-pop {
+            animation: popUp 0.35s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+        }
+
+        /* Glassmorphism panel */
+        .glass-panel {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(16px);
+            border: 2px solid rgba(255, 255, 255, 0.2);
+        }
+
+        /* Floating Flying Score Number */
+        .score-popup {
+            position: absolute;
+            animation: floatUpFade 1s forwards ease-out;
+            pointer-events: none;
+            font-weight: 900;
+        }
+        @keyframes floatUpFade {
+            0% { opacity: 1; transform: translateY(0) scale(1); }
+            100% { opacity: 0; transform: translateY(-60px) scale(1.4); }
+        }
+    </style>
+</head>
+<body class="flex items-center justify-center p-3 sm:p-6 min-h-screen">
+
+    <!-- ФОНОВЫЕ ДЕКОРАТИВНЫЕ ЭЛЕМЕНТЫ -->
+    <div class="fixed inset-0 pointer-events-none overflow-hidden">
+        <div class="absolute top-10 left-10 text-5xl opacity-20 animate-float" style="animation-delay: 0s;">🪐</div>
+        <div class="absolute top-1/3 right-12 text-6xl opacity-20 animate-float" style="animation-delay: 1s;">⭐</div>
+        <div class="absolute bottom-12 left-1/4 text-5xl opacity-20 animate-float" style="animation-delay: 2s;">🚀</div>
+    </div>
+
+    <!-- ГЛАВНЫЙ ИГРОВОЙ КОНТЕЙНЕР -->
+    <div id="app-container" class="w-full max-w-4xl glass-panel rounded-3xl p-4 sm:p-8 shadow-2xl relative z-10 my-auto border-2 border-purple-400/30">
+        
+        <!-- ШАПКА ИГРЫ И ИНФО-ПАНЕЛЬ -->
+        <header id="main-header" class="flex flex-wrap justify-between items-center gap-3 mb-6 bg-purple-950/60 p-3 sm:p-4 rounded-2xl border border-purple-500/30">
+            <div class="flex items-center gap-3">
+                <div id="hero-avatar" class="w-12 h-12 sm:w-14 sm:h-14 bg-gradient-to-tr from-yellow-400 to-amber-500 rounded-2xl flex items-center justify-center text-2xl sm:text-3xl shadow-lg border-2 border-yellow-200 cursor-pointer animate-float" onclick="openMenuModal()">
+                    🐱
+                </div>
+                <div>
+                    <h1 class="font-header font-extrabold text-lg sm:text-2xl text-transparent bg-clip-text bg-gradient-to-r from-yellow-300 via-pink-400 to-cyan-300">
+                        ПАДЕЖНЫЕ СУПЕРГЕРОИ
+                    </h1>
+                    <p id="hero-name-label" class="text-xs sm:text-sm text-cyan-300 font-bold">Герой: Кот-Космонавт</p>
+                </div>
+            </div>
+
+            <!-- Игровой счётчик и меню -->
+            <div class="flex items-center gap-2 sm:gap-3 ml-auto">
+                <div class="bg-gradient-to-r from-orange-500 to-amber-500 px-2.5 sm:px-3 py-1.5 rounded-xl flex items-center gap-1.5 sm:gap-2 shadow-md border border-orange-300/40">
+                    <span class="text-sm sm:text-lg">🔥</span>
+                    <span id="streak-counter" class="font-black text-white text-xs sm:text-lg">x0</span>
+                </div>
+                <div class="bg-gradient-to-r from-yellow-400 to-amber-500 px-3 sm:px-3.5 py-1.5 rounded-xl flex items-center gap-1.5 sm:gap-2 shadow-md text-purple-950 font-black border border-yellow-200">
+                    <span class="text-sm sm:text-lg">⭐</span>
+                    <span id="score-counter" class="text-xs sm:text-lg">0</span>
+                </div>
+                <!-- КНОПКА МЕНЮ / ПАУЗЫ -->
+                <button onclick="openMenuModal()" class="btn-3d bg-pink-600 hover:bg-pink-500 text-white font-extrabold px-3 py-2 rounded-xl text-xs sm:text-sm flex items-center gap-1.5 border-pink-400" style="--btn-shadow: #831843;">
+                    <i class="fa-solid fa-house text-yellow-300"></i>
+                    <span class="hidden sm:inline">В меню</span>
+                </button>
+                <button onclick="toggleHelpModal(true)" class="btn-3d bg-indigo-600 hover:bg-indigo-500 text-white font-extrabold px-3 py-2 rounded-xl text-xs sm:text-sm flex items-center gap-2 border-indigo-400" style="--btn-shadow: #312e81;">
+                    <i class="fa-solid fa-book-bookmark text-yellow-300"></i>
+                    <span class="hidden sm:inline">Шпаргалка</span>
+                </button>
+            </div>
+        </header>
+
+        <!-- 1. ЭКРАН ВЫБОРА ГЕРОЯ И РЕЖИМА (СТАРТОВЫЙ) -->
+        <section id="start-screen" class="space-y-6 text-center py-4 animate-pop">
+            <h2 class="font-header text-2xl sm:text-4xl font-black text-transparent bg-clip-text bg-gradient-to-r from-cyan-300 to-pink-400">
+                ВЫБЕРИ СВОЕГО СУПЕРГЕРОЯ!
+            </h2>
+
+            <!-- Селектор Героев -->
+            <div class="grid grid-cols-3 gap-3 sm:gap-6 max-w-2xl mx-auto">
+                <div onclick="selectHero('cat')" id="hero-card-cat" class="hero-card glass-panel p-4 rounded-2xl cursor-pointer hover:scale-105 transition border-2 border-yellow-400 bg-yellow-500/20">
+                    <div class="text-5xl sm:text-6xl mb-2 animate-float">🐱🚀</div>
+                    <h3 class="font-header font-bold text-sm sm:text-lg text-yellow-300">Кот-Космонавт</h3>
+                </div>
+                <div onclick="selectHero('owl')" id="hero-card-owl" class="hero-card glass-panel p-4 rounded-2xl cursor-pointer hover:scale-105 transition border-2 border-transparent hover:border-purple-400">
+                    <div class="text-5xl sm:text-6xl mb-2 animate-float" style="animation-delay: 0.5s;">🦉✨</div>
+                    <h3 class="font-header font-bold text-sm sm:text-lg text-purple-300">Сова-Маг</h3>
+                </div>
+                <div onclick="selectHero('dragon')" id="hero-card-dragon" class="hero-card glass-panel p-4 rounded-2xl cursor-pointer hover:scale-105 transition border-2 border-transparent hover:border-emerald-400">
+                    <div class="text-5xl sm:text-6xl mb-2 animate-float" style="animation-delay: 1s;">🐲🔥</div>
+                    <h3 class="font-header font-bold text-sm sm:text-lg text-emerald-300">Дракончик</h3>
+                </div>
+            </div>
+
+            <!-- Режимы игры -->
+            <div class="pt-4 space-y-4 max-w-md mx-auto">
+                <h3 class="font-header text-xl font-bold text-purple-200">ВЫБЕРИ РЕЖИМ МИССИИ:</h3>
+                
+                <button onclick="startGame('quiz')" class="btn-3d w-full bg-gradient-to-r from-pink-500 to-rose-600 hover:from-pink-400 hover:to-rose-500 text-white font-black text-lg py-4 rounded-2xl shadow-xl flex items-center justify-center gap-3 border-pink-300" style="--btn-shadow: #881337;">
+                    <span class="text-2xl">🌌</span> КОСМИЧЕСКАЯ ОДИССЕЯ (КВИЗ)
+                </button>
+
+                <button onclick="startGame('arcade')" class="btn-3d w-full bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-white font-black text-lg py-4 rounded-2xl shadow-xl flex items-center justify-center gap-3 border-cyan-300" style="--btn-shadow: #1e3a8a;">
+                    <span class="text-2xl">🎯</span> СПАСЕНИЕ СЛОВ (АРКАДА)
+                </button>
+            </div>
+        </section>
+
+        <!-- 2. РЕЖИМ 1: КОСМИЧЕСКАЯ ОДИССЕЯ (КВИЗ) -->
+        <section id="quiz-screen" class="hidden space-y-6">
+            <!-- Прогресс -->
+            <div class="space-y-1">
+                <div class="flex justify-between text-xs sm:text-sm font-bold text-cyan-300">
+                    <span class="flex items-center gap-2">
+                        <span>ПРОГРЕСС ИССЛЕДОВАНИЯ</span>
+                        <button onclick="confirmReturnToMenu()" class="text-xs bg-purple-800/80 hover:bg-purple-700 text-yellow-300 px-2 py-1 rounded-lg border border-purple-400/40">🏠 В меню</button>
+                    </span>
+                    <span id="quiz-progress-text">Вопрос 1 из 10</span>
+                </div>
+                <div class="w-full bg-purple-950/80 rounded-full h-4 p-1 border border-purple-500/40">
+                    <div id="quiz-progress-bar" class="bg-gradient-to-r from-cyan-400 via-pink-500 to-yellow-400 h-full rounded-full transition-all duration-300" style="width: 10%"></div>
+                </div>
+            </div>
+
+            <!-- Карточка с предложению -->
+            <div class="relative bg-gradient-to-b from-purple-900/80 to-indigo-950/90 p-6 sm:p-8 rounded-3xl border-2 border-purple-400/40 text-center shadow-2xl">
+                <div id="quiz-hero-bubble" class="absolute -top-7 left-1/2 transform -translate-x-1/2 bg-yellow-400 text-purple-950 px-4 py-1.5 rounded-full font-black text-xs sm:text-sm shadow-lg border-2 border-white flex items-center gap-2">
+                    <span id="quiz-hero-icon">🐱</span>
+                    <span id="quiz-hero-speech">Определи падеж подсвеченного слова!</span>
+                </div>
+
+                <div id="quiz-sentence-box" class="text-xl sm:text-3xl font-black text-white leading-relaxed pt-2">
+                    <!-- Предложение -->
+                </div>
+            </div>
+
+            <!-- 6 Падежных кнопок -->
+            <div id="quiz-cases-grid" class="grid grid-cols-2 sm:grid-cols-3 gap-3 sm:gap-4">
+                <!-- Генерируются JS -->
+            </div>
+
+            <!-- Обратная связь -->
+            <div id="quiz-feedback" class="hidden p-4 rounded-2xl text-center font-black text-lg animate-pop"></div>
+        </section>
+
+        <!-- 3. РЕЖИМ 2: СПАСЕНИЕ СЛОВ (АРКАДА) -->
+        <section id="arcade-screen" class="hidden space-y-6">
+            <div class="flex justify-between items-center text-xs sm:text-sm font-bold text-cyan-300">
+                <span class="flex items-center gap-2">
+                    <span>СПАСИ ВСЕ СЛОВА!</span>
+                    <button onclick="confirmReturnToMenu()" class="text-xs bg-purple-800/80 hover:bg-purple-700 text-yellow-300 px-2 py-1 rounded-lg border border-purple-400/40">🏠 В меню</button>
+                </span>
+                <span id="arcade-progress-text">Осталось: 10 слов</span>
+            </div>
+
+            <!-- Главная платформа со словом -->
+            <div class="bg-gradient-to-br from-indigo-900/90 to-purple-950/90 p-8 rounded-3xl border-2 border-cyan-400/40 text-center space-y-4 shadow-2xl relative overflow-hidden">
+                <div class="text-xs uppercase tracking-widest text-cyan-300 font-bold">Целевое предложение:</div>
+                <div id="arcade-context-sentence" class="text-lg sm:text-xl font-bold text-purple-200"></div>
+                
+                <div class="py-4">
+                    <span id="arcade-target-word" class="inline-block bg-gradient-to-r from-yellow-300 to-amber-400 text-purple-950 font-black text-2xl sm:text-4xl px-6 py-3 rounded-2xl shadow-xl animate-float border-2 border-white">
+                        СЛОВО
+                    </span>
+                </div>
+                <p class="text-xs sm:text-sm text-purple-300">Отправь слово на правильную Падежную Планету 👇</p>
+            </div>
+
+            <!-- Планеты-Падежи -->
+            <div id="arcade-planets-grid" class="grid grid-cols-2 sm:grid-cols-3 gap-3 sm:gap-4">
+                <!-- Генерируются JS -->
+            </div>
+        </section>
+
+        <!-- 4. ЭКРАН ПОБЕДЫ И СЕРТИФИКАТ -->
+        <section id="result-screen" class="hidden text-center space-y-6 py-4 animate-pop">
+            <div class="text-7xl mb-2 animate-float">🏆</div>
+            <h2 class="font-header font-black text-3xl sm:text-5xl text-transparent bg-clip-text bg-gradient-to-r from-yellow-300 via-pink-400 to-cyan-300">
+                МИССИЯ ВЫПОЛНЕНА!
+            </h2>
+
+            <div id="result-stars" class="flex justify-center gap-3 text-5xl text-yellow-400">
+                <!-- Звезды -->
+            </div>
+
+            <!-- Карточка результата -->
+            <div class="glass-panel p-6 rounded-3xl border-2 border-purple-400/40 max-w-md mx-auto space-y-4 text-left">
+                <div class="flex justify-between items-center text-lg font-bold border-b border-purple-500/30 pb-2">
+                    <span class="text-purple-200">Правильных ответов:</span>
+                    <span id="result-correct" class="text-emerald-400 font-black text-xl">10 / 10</span>
+                </div>
+                <div class="flex justify-between items-center text-lg font-bold border-b border-purple-500/30 pb-2">
+                    <span class="text-purple-200">Набранные Очки:</span>
+                    <span id="result-score" class="text-yellow-300 font-black text-xl">1200</span>
+                </div>
+                <div class="flex justify-between items-center text-lg font-bold">
+                    <span class="text-purple-200">Звание Супергероя:</span>
+                    <span id="result-badge" class="text-cyan-300 font-black">Повелитель Падежей</span>
+                </div>
+            </div>
+
+            <div class="flex flex-wrap justify-center gap-4 pt-2">
+                <button onclick="printCertificate()" class="btn-3d bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white font-black px-6 py-3.5 rounded-2xl flex items-center gap-2 border-purple-300" style="--btn-shadow: #312e81;">
+                    <i class="fa-solid fa-print"></i> Распечатать Грамоту
+                </button>
+                <button onclick="restartGame()" class="btn-3d bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-400 hover:to-teal-500 text-white font-black text-lg px-8 py-3.5 rounded-2xl border-emerald-300" style="--btn-shadow: #064e3b;">
+                    🔄 Играть Ещё Раз
+                </button>
+            </div>
+        </section>
+
+    </div>
+
+    <!-- МОДАЛЬНОЕ ОКНО: ПАУЗА / ВЫХОД В МЕНЮ -->
+    <div id="pause-modal" class="hidden fixed inset-0 bg-black/80 backdrop-blur-md z-50 flex items-center justify-center p-4">
+        <div class="glass-panel bg-purple-950/90 rounded-3xl max-w-sm w-full p-6 border-2 border-purple-400 text-center space-y-5 animate-pop">
+            <div class="text-5xl">⏸️</div>
+            <h3 class="font-header font-bold text-2xl text-yellow-300">Пауза Миссии</h3>
+            <p class="text-purple-200 text-sm">Хочешь вернуться в главное меню или продолжишь игру?</p>
+            <div class="space-y-3">
+                <button onclick="resumeGame()" class="btn-3d w-full bg-gradient-to-r from-emerald-500 to-teal-600 text-white font-bold py-3 rounded-xl border-emerald-300" style="--btn-shadow: #064e3b;">
+                    ▶️ Продолжить Игру
+                </button>
+                <button onclick="returnToStartMenu()" class="btn-3d w-full bg-gradient-to-r from-pink-600 to-rose-600 text-white font-bold py-3 rounded-xl border-pink-300" style="--btn-shadow: #881337;">
+                    🏠 Выйти в Главное Меню
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- МОДАЛЬНОЕ ОКНО: Магическая Книга Падежей -->
+    <div id="help-modal" class="hidden fixed inset-0 bg-black/80 backdrop-blur-md z-50 flex items-center justify-center p-4">
+        <div class="glass-panel bg-purple-950/90 rounded-3xl max-w-lg w-full p-6 border-2 border-purple-400 space-y-4 animate-pop max-h-[90vh] overflow-y-auto">
+            <div class="flex justify-between items-center border-b border-purple-500/40 pb-3">
+                <h3 class="font-header font-bold text-2xl text-yellow-300 flex items-center gap-2">
+                    <span>📚</span> Магическая Книга Падежей
+                </h3>
+                <button onclick="toggleHelpModal(false)" class="text-purple-300 hover:text-white text-3xl font-bold px-2">&times;</button>
+            </div>
+            
+            <div class="space-y-2.5 text-sm sm:text-base">
+                <div class="p-3 bg-red-500/20 rounded-xl border border-red-400/40">
+                    <span class="font-black text-red-300">Именительный (И.п.):</span> Есть <b>Кто? Что?</b>
+                </div>
+                <div class="p-3 bg-orange-500/20 rounded-xl border border-orange-400/40">
+                    <span class="font-black text-orange-300">Родительный (Р.п.):</span> Нет <b>Кого? Чего?</b>
+                </div>
+                <div class="p-3 bg-yellow-500/20 rounded-xl border border-yellow-400/40">
+                    <span class="font-black text-yellow-300">Дательный (Д.п.):</span> Дать <b>Кому? Чему?</b>
+                </div>
+                <div class="p-3 bg-emerald-500/20 rounded-xl border border-emerald-400/40">
+                    <span class="font-black text-emerald-300">Винительный (В.п.):</span> Вижу <b>Кого? Что?</b>
+                </div>
+                <div class="p-3 bg-cyan-500/20 rounded-xl border border-cyan-400/40">
+                    <span class="font-black text-cyan-300">Творительный (Т.п.):</span> Горжусь <b>Кем? Чем?</b>
+                </div>
+                <div class="p-3 bg-purple-500/20 rounded-xl border border-purple-400/40">
+                    <span class="font-black text-purple-300">Предложный (П.п.):</span> Думаю <b>О ком? О чём?</b>
+                </div>
+            </div>
+
+            <button onclick="toggleHelpModal(false)" class="btn-3d w-full bg-gradient-to-r from-purple-600 to-indigo-600 text-white font-bold py-3.5 rounded-xl border-purple-300" style="--btn-shadow: #312e81;">
+                Вернуться к Миссии
+            </button>
+        </div>
+    </div>
+
+    <!-- ИГРОВАЯ ЛОГИКА -->
+    <script>
+        // --- ДАННЫЕ ПАДЕЖЕЙ ---
+        const CASES = [
+            { id: 'nom', name: 'Именительный', short: 'И.п.', question: 'Кто? Что?', color: 'from-red-500 to-rose-600', shadow: '#9f1239' },
+            { id: 'gen', name: 'Родительный', short: 'Р.п.', question: 'Кого? Чего?', color: 'from-orange-500 to-amber-600', shadow: '#9a3412' },
+            { id: 'dat', name: 'Дательный', short: 'Д.п.', question: 'Кому? Чему?', color: 'from-yellow-500 to-amber-500', shadow: '#854d0e' },
+            { id: 'acc', name: 'Винительный', short: 'В.п.', question: 'Кого? Что?', color: 'from-emerald-500 to-green-600', shadow: '#065f46' },
+            { id: 'ins', name: 'Творительный', short: 'Т.п.', question: 'Кем? Чем?', color: 'from-cyan-500 to-blue-600', shadow: '#1e40af' },
+            { id: 'pre', name: 'Предложный', short: 'П.п.', question: 'О ком? О чём?', color: 'from-purple-500 to-indigo-600', shadow: '#3730a3' }
+        ];
+
+        // --- БАЗА ЗАДАНИЙ И ПРЕДЛОЖЕНИЙ (60+ Разнообразных вопросов) ---
+        const BANK = [
+            // Именительный (И.п.)
+            { sentence: "В космос полетела быстрая <mark class='bg-yellow-300 text-purple-950 px-2 py-0.5 rounded-lg font-black'>ракета</mark>.", word: "ракета", correct: "nom", hint: "Полетела (что?) ракета — подлежащее." },
+            { sentence: "На веточке поёт звонкий <mark class='bg-yellow-300 text-purple-950 px-2 py-0.5 rounded-lg font-black'>соловей</mark>.", word: "соловей", correct: "nom", hint: "Поёт (кто?) соловей." },
+            { sentence: "В океане плавает огромный <mark class='bg-yellow-300 text-purple-950 px-2 py-0.5 rounded-lg font-black'>кит</mark>.", word: "кит", correct: "nom", hint: "Плавает (кто?) кит." },
+            { sentence: "Осенью падают жёлтые <mark class='bg-yellow-300 text-purple-950 px-2 py-0.5 rounded-lg font-black'>листья</mark>.", word: "листья", correct: "nom", hint: "Падают (что?) листья." },
+            { sentence: "Ученикам понравилась новая <mark class='bg-yellow-300 text-purple-950 px-2 py-0.5 rounded-lg font-black'>игра</mark>.", word: "игра", correct: "nom", hint: "Понравилась (что?) игра." },
+            { sentence: "В небе засияло яркое <mark class='bg-yellow-300 text-purple-950 px-2 py-0.5 rounded-lg font-black'>солнце</mark>.", word: "солнце", correct: "nom", hint: "Засияло (что?) солнце." },
+            { sentence: "На столе лежит интересная <mark class='bg-yellow-300 text-purple-950 px-2 py-0.5 rounded-lg font-black'>книга</mark>.", word: "книга", correct: "nom", hint: "Лежит (что?) книга." },
+            { sentence: "По тропинке бежал пушистый <mark class='bg-yellow-300 text-purple-950 px-2 py-0.5 rounded-lg font-black'>заяц</mark>.", word: "заяц", correct: "nom", hint: "Бежал (кто?) заяц." },
+            { sentence: "Маленькая <mark class='bg-yellow-300 text-purple-950 px-2 py-0.5 rounded-lg font-black'>девочка</mark> рисует космический корабль.", word: "девочка", correct: "nom", hint: "Рисует (кто?) девочка." },
+            { sentence: "В саду расцвёл красивый <mark class='bg-yellow-300 text-purple-950 px-2 py-0.5 rounded-lg font-black'>цветок</mark>.", word: "цветок", correct: "nom", hint: "Расцвёл (что?) цветок." },
+
+            // Родительный (Р.п.)
+            { sentence: "У далёкой <mark class='bg-yellow-300 text-purple-950 px-2 py-0.5 rounded-lg font-black'>луны</mark> кружат спутники.", word: "луны", correct: "gen", hint: "Кружат у (чего?) луны." },
+            { sentence: "Без крепкого <mark class='bg-yellow-300 text-purple-950 px-2 py-0.5 rounded-lg font-black'>скафандра</mark> нельзя выйти в космос.", word: "скафандра", correct: "gen", hint: "Нельзя без (чего?) скафандра." },
+            { sentence: "Около ветхого <mark class='bg-yellow-300 text-purple-950 px-2 py-0.5 rounded-lg font-black'>дома</mark> росла старая яблоня.", word: "дома", correct: "gen", hint: "Росла около (чего?) дома." },
+            { sentence: "В лесу нет хищного <mark class='bg-yellow-300 text-purple-950 px-2 py-0.5 rounded-lg font-black'>волка</mark>.", word: "волка", correct: "gen", hint: "Нет (кого?) волка." },
+            { sentence: "Дети набрали корзину спелой <mark class='bg-yellow-300 text-purple-950 px-2 py-0.5 rounded-lg font-black'>земляники</mark>.", word: "земляники", correct: "gen", hint: "Корзину (чего?) земляники." },
+            { sentence: "На ветке не осталось ни одного <mark class='bg-yellow-300 text-purple-950 px-2 py-0.5 rounded-lg font-black'>яблока</mark>.", word: "яблока", correct: "gen", hint: "Не осталось (чего?) яблока." },
+            { sentence: "Учитель ждёт своего <mark class='bg-yellow-300 text-purple-950 px-2 py-0.5 rounded-lg font-black'>ученика</mark>.", word: "ученика", correct: "gen", hint: "Ждёт (кого?) ученика." },
+            { sentence: "От высокого <mark class='bg-yellow-300 text-purple-950 px-2 py-0.5 rounded-lg font-black'>дерева</mark> падала тень.", word: "дерева", correct: "gen", hint: "Падала от (чего?) дерева." },
+            { sentence: "С крыши капают капли <mark class='bg-yellow-300 text-purple-950 px-2 py-0.5 rounded-lg font-black'>воды</mark>.", word: "воды", correct: "gen", hint: "Капли (чего?) воды." },
+            { sentence: "Около речки мы увидели следы <mark class='bg-yellow-300 text-purple-950 px-2 py-0.5 rounded-lg font-black'>медведя</mark>.", word: "медведя", correct: "gen", hint: "Следы (кого?) медведя." },
+
+            // Дательный (Д.п.)
+            { sentence: "Учёные отправили сигнал <mark class='bg-yellow-300 text-purple-950 px-2 py-0.5 rounded-lg font-black'>марсоходу</mark>.", word: "марсоходу", correct: "dat", hint: "Отправили (чему?) марсоходу." },
+            { sentence: "Герои передали привет родной <mark class='bg-yellow-300 text-purple-950 px-2 py-0.5 rounded-lg font-black'>Земле</mark>.", word: "Земле", correct: "dat", hint: "Передали (чему?) Земле." },
+            { sentence: "Бабушка улыбнулась любимому <mark class='bg-yellow-300 text-purple-950 px-2 py-0.5 rounded-lg font-black'>внуку</mark>.", word: "внуку", correct: "dat", hint: "Улыбнулась (кому?) внуку." },
+            { sentence: "По звонкому <mark class='bg-yellow-300 text-purple-950 px-2 py-0.5 rounded-lg font-black'>ручью</mark> плыл кораблик.", word: "ручью", correct: "dat", hint: "Плыл по (чему?) ручью." },
+            { sentence: "Ребята подошли к быстрому <mark class='bg-yellow-300 text-purple-950 px-2 py-0.5 rounded-lg font-black'>поезду</mark>.", word: "поезду", correct: "dat", hint: "Подошли к (чему?) поезду." },
+            { sentence: "Собака подбежала к своему <mark class='bg-yellow-300 text-purple-950 px-2 py-0.5 rounded-lg font-black'>хозяину</mark>.", word: "хозяину", correct: "dat", hint: "Подбежала к (кому?) хозяину." },
+            { sentence: "Птицы рады тёплому <mark class='bg-yellow-300 text-purple-950 px-2 py-0.5 rounded-lg font-black'>солнышку</mark>.", word: "солнышку", correct: "dat", hint: "Рады (чему?) солнышку." },
+            { sentence: "Художник подарил картину своей <mark class='bg-yellow-300 text-purple-950 px-2 py-0.5 rounded-lg font-black'>сестре</mark>.", word: "сестре", correct: "dat", hint: "Подарил (кому?) сестре." },
+            { sentence: "Мальчик радуется новому <mark class='bg-yellow-300 text-purple-950 px-2 py-0.5 rounded-lg font-black'>велосипеду</mark>.", word: "велосипеду", correct: "dat", hint: "Радуется (чему?) велосипеду." },
+            { sentence: "По песчаному <mark class='bg-yellow-300 text-purple-950 px-2 py-0.5 rounded-lg font-black'>берегу</mark> полз краб.", word: "берегу", correct: "dat", hint: "Полз по (чему?) берегу." },
+
+            // Винительный (В.п.)
+            { sentence: "Телескоп показал новую <mark class='bg-yellow-300 text-purple-950 px-2 py-0.5 rounded-lg font-black'>комету</mark>.", word: "комету", correct: "acc", hint: "Показал (что?) комету." },
+            { sentence: "Девочка заметила в лесу пугливое <mark class='bg-yellow-300 text-purple-950 px-2 py-0.5 rounded-lg font-black'>животное</mark>.", word: "животное", correct: "acc", hint: "Заметила (кого?) животное." },
+            { sentence: "Мальчик читает интересную <mark class='bg-yellow-300 text-purple-950 px-2 py-0.5 rounded-lg font-black'>сказку</mark>.", word: "сказку", correct: "acc", hint: "Читает (что?) сказку." },
+            { sentence: "Мама испекла вкусный <mark class='bg-yellow-300 text-purple-950 px-2 py-0.5 rounded-lg font-black'>пирог</mark>.", word: "пирог", correct: "acc", hint: "Испекла (что?) пирог." },
+            { sentence: "В зоопарке дети увидели рыжего <mark class='bg-yellow-300 text-purple-950 px-2 py-0.5 rounded-lg font-black'>лиса</mark>.", word: "лиса", correct: "acc", hint: "Увидели (кого?) лиса." },
+            { sentence: "Астронавт надел тяжелый <mark class='bg-yellow-300 text-purple-950 px-2 py-0.5 rounded-lg font-black'>шлем</mark>.", word: "шлем", correct: "acc", hint: "Надел (что?) шлем." },
+            { sentence: "Художник нарисовал красивую <mark class='bg-yellow-300 text-purple-950 px-2 py-0.5 rounded-lg font-black'>птицу</mark>.", word: "птицу", correct: "acc", hint: "Нарисовал (кого?) птицу." },
+            { sentence: "Ученик решил сложную <mark class='bg-yellow-300 text-purple-950 px-2 py-0.5 rounded-lg font-black'>задачу</mark>.", word: "задачу", correct: "acc", hint: "Решил (что?) задачу." },
+            { sentence: "Космонавт нажал красную <mark class='bg-yellow-300 text-purple-950 px-2 py-0.5 rounded-lg font-black'>кнопку</mark>.", word: "кнопку", correct: "acc", hint: "Нажал (что?) кнопку." },
+            { sentence: "Мы встретили доброго <mark class='bg-yellow-300 text-purple-950 px-2 py-0.5 rounded-lg font-black'>друга</mark>.", word: "друга", correct: "acc", hint: "Встретили (кого?) друга." },
+
+            // Творительный (Т.п.)
+            { sentence: "Звёзды светят над тёмной <mark class='bg-yellow-300 text-purple-950 px-2 py-0.5 rounded-lg font-black'>планетой</mark>.", word: "планетой", correct: "ins", hint: "Светят над (чем?) планетой." },
+            { sentence: "Котёнок играл с легким космическим <mark class='bg-yellow-300 text-purple-950 px-2 py-0.5 rounded-lg font-black'>шариком</mark>.", word: "шариком", correct: "ins", hint: "Играл с (чем?) шариком." },
+            { sentence: "Мальчик рисует цветным <mark class='bg-yellow-300 text-purple-950 px-2 py-0.5 rounded-lg font-black'>карандашом</mark>.", word: "карандашом", correct: "ins", hint: "Рисует (чем?) карандашом." },
+            { sentence: "Девочка любовалась прекрасным <mark class='bg-yellow-300 text-purple-950 px-2 py-0.5 rounded-lg font-black'>пейзажем</mark>.", word: "пейзажем", correct: "ins", hint: "Любовалась (чем?) пейзажем." },
+            { sentence: "Перед <mark class='bg-yellow-300 text-purple-950 px-2 py-0.5 rounded-lg font-black'>школой</mark> выросли высокие березы.", word: "школой", correct: "ins", hint: "Выросли перед (чем?) школой." },
+            { sentence: "Брат гордится своим старшим <mark class='bg-yellow-300 text-purple-950 px-2 py-0.5 rounded-lg font-black'>братом</mark>.", word: "братом", correct: "ins", hint: "Гордится (кем?) братом." },
+            { sentence: "Над зеленым <mark class='bg-yellow-300 text-purple-950 px-2 py-0.5 rounded-lg font-black'>лугом</mark> летали бабочки.", word: "лугом", correct: "ins", hint: "Летали над (чем?) лугом." },
+            { sentence: "Бабушка угостила нас горячим <mark class='bg-yellow-300 text-purple-950 px-2 py-0.5 rounded-lg font-black'>чаем</mark>.", word: "чаем", correct: "ins", hint: "Угостила (чем?) чаем." },
+            { sentence: "Корабль управлялся умным <mark class='bg-yellow-300 text-purple-950 px-2 py-0.5 rounded-lg font-black'>роботом</mark>.", word: "роботом", correct: "ins", hint: "Управлялся (кем?) роботом." },
+            { sentence: "Мальчик укрылся тёплым <mark class='bg-yellow-300 text-purple-950 px-2 py-0.5 rounded-lg font-black'>пледом</mark>.", word: "пледом", correct: "ins", hint: "Укрылся (чем?) пледом." },
+
+            // Предложный (П.п.)
+            { sentence: "Маленький астронавт мечтает о <mark class='bg-yellow-300 text-purple-950 px-2 py-0.5 rounded-lg font-black'>полёте</mark>.", word: "полёте", correct: "pre", hint: "Мечтает о (чём?) полёте." },
+            { sentence: "На <mark class='bg-yellow-300 text-purple-950 px-2 py-0.5 rounded-lg font-black'>солнце</mark> появились яркие вспышки.", word: "солнце", correct: "pre", hint: "Появились на (чём?) солнце." },
+            { sentence: "В старой <mark class='bg-yellow-300 text-purple-950 px-2 py-0.5 rounded-lg font-black'>берлоге</mark> спит медведь.", word: "берлоге", correct: "pre", hint: "Спит в (чём?) берлоге." },
+            { sentence: "Ученики думают о летних <mark class='bg-yellow-300 text-purple-950 px-2 py-0.5 rounded-lg font-black'>каникулах</mark>.", word: "каникулах", correct: "pre", hint: "Думают о (чём?) каникулах." },
+            { sentence: "На пушистой <mark class='bg-yellow-300 text-purple-950 px-2 py-0.5 rounded-lg font-black'>ели</mark> висела шишка.", word: "ели", correct: "pre", hint: "Висела на (чём?) ели." },
+            { sentence: "Дети заботятся о бездомном <mark class='bg-yellow-300 text-purple-950 px-2 py-0.5 rounded-lg font-black'>щенке</mark>.", word: "щенке", correct: "pre", hint: "Заботятся о (ком?) щенке." },
+            { sentence: "В синем <mark class='bg-yellow-300 text-purple-950 px-2 py-0.5 rounded-lg font-black'>небе</mark> плывут белые облака.", word: "небе", correct: "pre", hint: "Плывут в (чём?) небе." },
+            { sentence: "Учитель рассказал об отважном <mark class='bg-yellow-300 text-purple-950 px-2 py-0.5 rounded-lg font-black'>герое</mark>.", word: "герое", correct: "pre", hint: "Рассказал о (ком?) герое." },
+            { sentence: "На письменном <mark class='bg-yellow-300 text-purple-950 px-2 py-0.5 rounded-lg font-black'>столе</mark> стоит лампа.", word: "столе", correct: "pre", hint: "Стоит на (чём?) столе." },
+            { sentence: "Мы читали в энциклопедии о далеких <mark class='bg-yellow-300 text-purple-950 px-2 py-0.5 rounded-lg font-black'>галактиках</mark>.", word: "галактиках", correct: "pre", hint: "Читали о (чём?) галактиках." }
+        ];
+
+        // --- ГЕРОИ ---
+        const HEROES = {
+            cat: { name: "Кот-Космонавт", icon: "🐱🚀" },
+            owl: { name: "Сова-Маг", icon: "🦉✨" },
+            dragon: { name: "Дракончик", icon: "🐲🔥" }
+        };
+
+        // --- СОСТОЯНИЕ ИГРЫ ---
+        let selectedHero = 'cat';
+        let currentMode = 'quiz';
+        let questions = [];
+        let currentIndex = 0;
+        let score = 0;
+        let streak = 0;
+        let correctCount = 0;
+        let canAnswer = true;
+
+        // --- Алгоритм случайного перемешивания Fisher-Yates ---
+        function shuffleArray(array) {
+            const arr = [...array];
+            for (let i = arr.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [arr[i], arr[j]] = [arr[j], arr[i]];
+            }
+            return arr;
+        }
+
+        // --- ЗВУКОВОЙ ДВИЖОК (Web Audio API) ---
+        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        function playSound(type) {
+            if (audioCtx.state === 'suspended') audioCtx.resume();
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
+            const now = audioCtx.currentTime;
+
+            if (type === 'correct') {
+                osc.type = 'triangle';
+                osc.frequency.setValueAtTime(523.25, now);
+                osc.frequency.exponentialRampToValueAtTime(783.99, now + 0.18);
+                gain.gain.setValueAtTime(0.2, now);
+                gain.gain.exponentialRampToValueAtTime(0.01, now + 0.3);
+                osc.start(now); osc.stop(now + 0.3);
+            } else if (type === 'wrong') {
+                osc.type = 'sawtooth';
+                osc.frequency.setValueAtTime(261.63, now);
+                osc.frequency.setValueAtTime(196.00, now + 0.15);
+                gain.gain.setValueAtTime(0.3, now);
+                gain.gain.exponentialRampToValueAtTime(0.01, now + 0.35);
+                osc.start(now); osc.stop(now + 0.35);
+            } else if (type === 'click') {
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(400, now);
+                gain.gain.setValueAtTime(0.1, now);
+                gain.gain.exponentialRampToValueAtTime(0.01, now + 0.05);
+                osc.start(now); osc.stop(now + 0.05);
+            }
+        }
+
+        // --- ВЫБОР ГЕРОЯ ---
+        function selectHero(heroKey) {
+            playSound('click');
+            selectedHero = heroKey;
+            document.querySelectorAll('.hero-card').forEach(card => {
+                card.classList.remove('border-yellow-400', 'bg-yellow-500/20');
+                card.classList.add('border-transparent');
+            });
+            const activeCard = document.getElementById(`hero-card-${heroKey}`);
+            activeCard.classList.remove('border-transparent');
+            activeCard.classList.add('border-yellow-400', 'bg-yellow-500/20');
+
+            document.getElementById('hero-avatar').innerText = HEROES[heroKey].icon.split('')[0];
+            document.getElementById('hero-name-label').innerText = `Герой: ${HEROES[heroKey].name}`;
+        }
+
+        function showHeroSelect() {
+            confirmReturnToMenu();
+        }
+
+        // --- НАВИГАЦИЯ И ПАУЗА ---
+        function confirmReturnToMenu() {
+            playSound('click');
+            document.getElementById('pause-modal').classList.remove('hidden');
+        }
+
+        function resumeGame() {
+            playSound('click');
+            document.getElementById('pause-modal').classList.add('hidden');
+        }
+
+        function returnToStartMenu() {
+            playSound('click');
+            document.getElementById('pause-modal').classList.add('hidden');
+            document.getElementById('quiz-screen').classList.add('hidden');
+            document.getElementById('arcade-screen').classList.add('hidden');
+            document.getElementById('result-screen').classList.add('hidden');
+            document.getElementById('start-screen').classList.remove('hidden');
+        }
+
+        // --- СТАРТ ИГРЫ ---
+        function startGame(mode) {
+            playSound('click');
+            currentMode = mode;
+            // Каждая игра выбирает 10 рандомных уникальных вопросов из 60+ доступных
+            questions = shuffleArray(BANK).slice(0, 10);
+            currentIndex = 0;
+            score = 0;
+            streak = 0;
+            correctCount = 0;
+
+            updateUI();
+
+            document.getElementById('start-screen').classList.add('hidden');
+            document.getElementById('result-screen').classList.add('hidden');
+
+            if (mode === 'quiz') {
+                document.getElementById('quiz-screen').classList.remove('hidden');
+                document.getElementById('arcade-screen').classList.add('hidden');
+                renderQuizButtons();
+                showQuizQuestion();
+            } else {
+                document.getElementById('arcade-screen').classList.remove('hidden');
+                document.getElementById('quiz-screen').classList.add('hidden');
+                renderArcadePlanets();
+                showArcadeQuestion();
+            }
+        }
+
+        // --- КВИЗ РЕЖИМ ---
+        function renderQuizButtons() {
+            const grid = document.getElementById('quiz-cases-grid');
+            grid.innerHTML = '';
+            CASES.forEach(c => {
+                const btn = document.createElement('button');
+                btn.className = `btn-3d bg-gradient-to-r ${c.color} p-4 rounded-2xl text-center font-black flex flex-col items-center justify-center border-t border-white/30`;
+                btn.style.setProperty('--btn-shadow', c.shadow);
+                btn.onclick = () => handleAnswer(c.id, btn);
+                btn.innerHTML = `
+                    <span class="text-lg sm:text-xl font-header">${c.name}</span>
+                    <span class="text-xs opacity-90 font-sans mt-0.5">${c.question}</span>
+                `;
+                grid.appendChild(btn);
+            });
+        }
+
+        function showQuizQuestion() {
+            canAnswer = true;
+            const q = questions[currentIndex];
+            document.getElementById('quiz-sentence-box').innerHTML = q.sentence;
+            document.getElementById('quiz-progress-text').innerText = `Вопрос ${currentIndex + 1} из ${questions.length}`;
+            document.getElementById('quiz-progress-bar').style.width = `${((currentIndex) / questions.length) * 100}%`;
+            document.getElementById('quiz-hero-icon').innerText = HEROES[selectedHero].icon.split('')[0];
+            
+            const fb = document.getElementById('quiz-feedback');
+            fb.classList.add('hidden');
+        }
+
+        // --- АРКАДНЫЙ РЕЖИМ ---
+        function renderArcadePlanets() {
+            const grid = document.getElementById('arcade-planets-grid');
+            grid.innerHTML = '';
+            CASES.forEach(c => {
+                const btn = document.createElement('button');
+                btn.className = `btn-3d bg-gradient-to-r ${c.color} p-4 rounded-2xl text-center font-black flex flex-col items-center justify-center border-t border-white/30`;
+                btn.style.setProperty('--btn-shadow', c.shadow);
+                btn.onclick = () => handleAnswer(c.id, btn);
+                btn.innerHTML = `
+                    <span class="text-2xl mb-1">🪐</span>
+                    <span class="text-base sm:text-lg font-header">${c.name}</span>
+                    <span class="text-xs opacity-90">(${c.short})</span>
+                `;
+                grid.appendChild(btn);
+            });
+        }
+
+        function showArcadeQuestion() {
+            canAnswer = true;
+            const q = questions[currentIndex];
+            document.getElementById('arcade-context-sentence').innerText = q.sentence.replace(/<[^>]*>/g, '___');
+            document.getElementById('arcade-target-word').innerText = q.word.toUpperCase();
+            document.getElementById('arcade-progress-text').innerText = `Осталось: ${questions.length - currentIndex} слов`;
+        }
+
+        // --- ОБРАБОТКА ОТВЕТА ---
+        function handleAnswer(selectedId, btnEl) {
+            if (!canAnswer) return;
+            canAnswer = false;
+
+            const q = questions[currentIndex];
+            const isCorrect = selectedId === q.correct;
+
+            if (isCorrect) {
+                playSound('correct');
+                streak++;
+                correctCount++;
+                const bonus = streak > 1 ? streak * 20 : 0;
+                const points = 100 + bonus;
+                score += points;
+
+                showScoreFloat(btnEl, `+${points}`);
+
+                if (currentMode === 'quiz') {
+                    const fb = document.getElementById('quiz-feedback');
+                    fb.classList.remove('hidden');
+                    fb.className = "p-4 rounded-2xl text-center font-bold text-lg bg-emerald-500/20 text-emerald-300 border border-emerald-400 animate-pop";
+                    fb.innerHTML = `🎉 ВЕРНО! <span class="text-sm block font-normal text-purple-200">${q.hint}</span>`;
+                }
+            } else {
+                playSound('wrong');
+                streak = 0;
+                const correctObj = CASES.find(c => c.id === q.correct);
+
+                if (currentMode === 'quiz') {
+                    const fb = document.getElementById('quiz-feedback');
+                    fb.classList.remove('hidden');
+                    fb.className = "p-4 rounded-2xl text-center font-bold text-lg bg-rose-500/20 text-rose-300 border border-rose-400 animate-pop";
+                    fb.innerHTML = `УПС! Ошибка. Правильно: <b>${correctObj.name}</b>.<span class="text-sm block font-normal text-purple-200">${q.hint}</span>`;
+                }
+            }
+
+            updateUI();
+
+            setTimeout(() => {
+                currentIndex++;
+                if (currentIndex < questions.length) {
+                    if (currentMode === 'quiz') showQuizQuestion();
+                    else showArcadeQuestion();
+                } else {
+                    finishGame();
+                }
+            }, currentMode === 'quiz' ? 1800 : 800);
+        }
+
+        // Анимация улетающих цифр
+        function showScoreFloat(element, text) {
+            const rect = element.getBoundingClientRect();
+            const pop = document.createElement('div');
+            pop.className = 'score-popup text-yellow-300 text-2xl font-header';
+            pop.innerText = text;
+            pop.style.left = `${rect.left + rect.width / 2 - 20}px`;
+            pop.style.top = `${rect.top}px`;
+            document.body.appendChild(pop);
+            setTimeout(() => pop.remove(), 1000);
+        }
+
+        function updateUI() {
+            document.getElementById('score-counter').innerText = score;
+            document.getElementById('streak-counter').innerText = `x${streak}`;
+        }
+
+        // --- ЭКРАН ФИНАЛА ---
+        function finishGame() {
+            document.getElementById('quiz-screen').classList.add('hidden');
+            document.getElementById('arcade-screen').classList.add('hidden');
+            document.getElementById('result-screen').classList.remove('hidden');
+
+            document.getElementById('result-correct').innerText = `${correctCount} / ${questions.length}`;
+            document.getElementById('result-score').innerText = score;
+
+            const starsEl = document.getElementById('result-stars');
+            const badgeEl = document.getElementById('result-badge');
+
+            if (correctCount >= 9) {
+                starsEl.innerHTML = '⭐ ⭐ ⭐';
+                badgeEl.innerText = '🏆 Великий Мастер Падежей';
+            } else if (correctCount >= 6) {
+                starsEl.innerHTML = '⭐ ⭐ ⚪';
+                badgeEl.innerText = '🔍 Опытный Знаток';
+            } else {
+                starsEl.innerHTML = '⭐ ⚪ ⚪';
+                badgeEl.innerText = '🌱 Ученик Супергероя';
+            }
+
+            if (typeof confetti === 'function') {
+                confetti({ particleCount: 120, spread: 80, origin: { y: 0.6 } });
+            }
+        }
+
+        function restartGame() {
+            document.getElementById('result-screen').classList.add('hidden');
+            document.getElementById('start-screen').classList.remove('hidden');
+        }
+
+        function printCertificate() {
+            window.print();
+        }
+
+        function toggleHelpModal(show) {
+            playSound('click');
+            const modal = document.getElementById('help-modal');
+            if (show) modal.classList.remove('hidden');
+            else modal.classList.add('hidden');
+        }
+    </script>
+</body>
+</html>
